@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src https://r.jina.ai https://*.jina.ai; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <title>XNOTES - Save Content for Your AI Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e7e9ea;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #4ecdc4, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .input-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .url-input-wrapper {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        #urlInput {
+            flex: 1;
+            padding: 14px 18px;
+            font-size: 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        #urlInput:focus {
+            border-color: #4ecdc4;
+        }
+        
+        #urlInput::placeholder {
+            color: #666;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(78,205,196,0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .options {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        
+        .option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4ecdc4;
+        }
+        
+        .output-section {
+            display: none;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .output-section.active {
+            display: block;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .output-header h3 {
+            color: #4ecdc4;
+            font-size: 1.1rem;
+        }
+        
+        .output-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        #outputText {
+            width: 100%;
+            min-height: 400px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #e7e9ea;
+            resize: vertical;
+            outline: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(78,205,196,0.3);
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            display: none;
+            background: rgba(255,107,107,0.1);
+            border: 1px solid rgba(255,107,107,0.3);
+            border-radius: 10px;
+            padding: 16px;
+            color: #ff6b6b;
+            margin-bottom: 16px;
+        }
+        
+        .error.active {
+            display: block;
+        }
+        
+        .supported-sites {
+            margin-top: 32px;
+            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+        
+        .supported-sites h4 {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sites {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .site-tag {
+            padding: 6px 14px;
+            background: rgba(78,205,196,0.1);
+            border: 1px solid rgba(78,205,196,0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            color: #4ecdc4;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        footer a {
+            color: #4ecdc4;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>XNOTES</h1>
+            <p class="subtitle">Save web content in a format optimized for your AI agents</p>
+        </header>
+        
+        <div class="input-section">
+            <div class="url-input-wrapper">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="Paste article, X thread, docs, or newsletter URL..."
+                    autocomplete="off"
+                >
+                <button class="btn btn-primary" id="convertBtn" onclick="convertUrl()">
+                    Convert
+                </button>
+            </div>
+            
+            <div class="options">
+                <label class="option">
+                    <input type="checkbox" id="includeSummary" checked>
+                    <span>Include summary</span>
+                </label>
+                <label class="option">
+                    <input type="checkbox" id="includeMetadata" checked>
+                    <span>Include metadata</span>
+                </label>
+                <label class="option">
+                    <input type="checkbox" id="fullContent" checked>
+                    <span>Full content</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="error" id="errorBox"></div>
+        
+        <div class="loading" id="loadingBox">
+            <div class="spinner"></div>
+            <p>Extracting content for your agent...</p>
+        </div>
+        
+        <div class="output-section" id="outputSection">
+            <div class="output-header">
+                <h3>XNOTES Ready Output</h3>
+                <div class="output-actions">
+                    <button class="btn-small btn-secondary" onclick="copyToClipboard()">
+                        Copy
+                    </button>
+                    <button class="btn-small btn-secondary" onclick="downloadMarkdown()">
+                        Download
+                    </button>
+                </div>
+            </div>
+            <textarea id="outputText" readonly></textarea>
+        </div>
+        
+        <div class="supported-sites">
+            <h4>Supported Sources</h4>
+            <div class="sites">
+                <span class="site-tag">X / Twitter Threads</span>
+                <span class="site-tag">Articles</span>
+                <span class="site-tag">Documentation</span>
+                <span class="site-tag">Newsletters</span>
+                <span class="site-tag">Blog Posts</span>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Built for agents. Powered by <a href="https://jina.ai" target="_blank" rel="noopener noreferrer">Jina AI</a>.</p>
+        </footer>
+    </div>
+    
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const loadingBox = document.getElementById('loadingBox');
+        const outputSection = document.getElementById('outputSection');
+        const outputText = document.getElementById('outputText');
+        const errorBox = document.getElementById('errorBox');
+        
+        // Allow Enter key to submit
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') convertUrl();
+        });
+        
+        function detectUrlType(url) {
+            if (url.includes('twitter.com') || url.includes('x.com')) {
+                return 'X / Twitter';
+            } else if (url.includes('reddit.com')) {
+                return 'Reddit';
+            } else if (url.includes('github.com')) {
+                return 'GitHub';
+            } else if (url.includes('substack.com')) {
+                return 'Newsletter';
+            } else if (url.includes('medium.com') || url.includes('dev.to')) {
+                return 'Blog Post';
+            } else if (url.includes('docs.') || url.includes('documentation')) {
+                return 'Documentation';
+            } else {
+                return 'Article';
+            }
+        }
+        
+        async function convertUrl() {
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+            
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                showError('Please enter a valid URL starting with http:// or https://');
+                return;
+            }
+            
+            // Block internal/private IPs (SSRF prevention)
+            const blockedPatterns = [
+                /^https?:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)\./i,
+                /^https?:\/\/0\./i,
+                /^https?:\/\/\[?(::1|fc00:|fe80:)/i
+            ];
+            
+            if (blockedPatterns.some(pattern => pattern.test(url))) {
+                showError('Cannot process local or internal URLs');
+                return;
+            }
+            
+            // URL length check
+            if (url.length > 2000) {
+                showError('URL too long (max 2000 characters)');
+                return;
+            }
+            
+            // Clear previous output
+            errorBox.classList.remove('active');
+            outputSection.classList.remove('active');
+            
+            // Show loading
+            loadingBox.classList.add('active');
+            convertBtn.disabled = true;
+            
+            try {
+                const type = detectUrlType(url);
+                const cleanUrl = url.replace(/^https?:\/\//, '');
+                const jinaUrl = `https://r.jina.ai/http://${encodeURIComponent(cleanUrl)}`;
+                
+                // Fetch with timeout (DoS protection)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(jinaUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.status}`);
+                }
+                
+                const content = await response.text();
+                
+                // Format for agents
+                const formatted = formatForAgent(url, type, content);
+                
+                outputText.value = formatted;
+                outputSection.classList.add('active');
+                
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    showError('Request timed out. The site may be slow or unavailable.');
+                } else {
+                    showError('Failed to extract content. The site may block scraping or the URL may be invalid.');
+                }
+                console.error(err);
+            } finally {
+                loadingBox.classList.remove('active');
+                convertBtn.disabled = false;
+            }
+        }
+        
+        function formatForAgent(url, type, content) {
+            const includeSummary = document.getElementById('includeSummary').checked;
+            const includeMetadata = document.getElementById('includeMetadata').checked;
+            const fullContent = document.getElementById('fullContent').checked;
+            
+            let output = '';
+            
+            // YAML Frontmatter (metadata for agents)
+            if (includeMetadata) {
+                output += `---\n`;
+                output += `source_type: ${type}\n`;
+                output += `source_url: ${url}\n`;
+                output += `extracted_at: ${new Date().toISOString()}\n`;
+                output += `extracted_by: XNOTES\n`;
+                output += `---\n\n`;
+            }
+            
+            // Summary section
+            if (includeSummary) {
+                output += `## Summary\n`;
+                output += `[Auto-generated summary would go here]\n\n`;
+            }
+            
+            // Full content
+            if (fullContent) {
+                output += `## Content\n\n`;
+                output += cleanContent(content);
+            }
+            
+            return output;
+        }
+        
+        function cleanContent(text) {
+            // Remove common noise
+            return text
+                .replace(/Skip to content/gi, '')
+                .replace(/Read more/gi, '')
+                .replace(/Share this article/gi, '')
+                .replace(/Subscribe now/gi, '')
+                .replace(/\n{3,}/g, '\n\n')  // Normalize excessive newlines
+                .trim();
+        }
+        
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.classList.add('active');
+        }
+        
+        function copyToClipboard() {
+            outputText.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = original, 2000);
+        }
+        
+        function downloadMarkdown() {
+            const blob = new Blob([outputText.value], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `agentbook-${Date.now()}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
